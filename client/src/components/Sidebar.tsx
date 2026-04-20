@@ -17,21 +17,6 @@ export function DesktopSidebar() {
 
   return (
     <aside className="sidebar">
-      {/* Logo */}
-      <div style={{
-        padding: "18px 18px 14px",
-        borderBottom: "1px solid hsl(var(--border-soft))",
-        display: "flex", alignItems: "center", gap: 9,
-      }}>
-        <ToriiLogo />
-        <span style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 13, fontWeight: 600,
-          letterSpacing: "0.14em",
-          color: "hsl(var(--fg))",
-        }}>TORII</span>
-      </div>
-
       {/* Nav */}
       <div style={{ padding: "12px 0 0" }}>
         <div className="nav-section-label" style={{ marginBottom: 6 }}>Views</div>
