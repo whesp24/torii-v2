@@ -797,6 +797,9 @@ input, textarea { font-family: inherit; }
 .app-shell.mobile .main-scroll {
   padding: 16px;
   padding-bottom: calc(env(safe-area-inset-bottom) + 76px);
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Bottom Navigation */
@@ -852,14 +855,14 @@ input, textarea { font-family: inherit; }
 
   .page-title { font-size: 18px; }
 
-  /* KPI grids: 2-col on mobile, constrained to viewport */
+  /* KPI grids: single column on mobile — mobile overview uses its own layout */
   .kpi-grid-6 {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr !important;
     width: 100% !important;
     max-width: 100% !important;
   }
   .kpi-grid-3 {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: 1fr 1fr !important;
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -901,29 +904,36 @@ input, textarea { font-family: inherit; }
   /* Cards */
   .card, .kpi-card { padding: 14px; border-radius: var(--r-md); }
 
-  /* Topbar: two-row layout on mobile */
+  /* Topbar: two-row grid on mobile — LOCKS width to viewport */
   .topbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "logo . controls"
+      "ticker ticker ticker";
     height: auto;
-    min-height: var(--topbar-h);
-    flex-wrap: wrap;
-    padding: 8px 14px 0;
-    gap: 6px;
-    align-items: center;
+    padding: 8px 14px 6px;
+    gap: 6px 8px;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
   }
-  /* Logo row: logo left, right controls right */
-  .topbar-logo { order: 1; flex-shrink: 0; }
-  .topbar-right { order: 2; margin-left: auto; gap: 6px; }
+  .topbar-logo { grid-area: logo; align-self: center; }
+  .topbar-right { grid-area: controls; align-self: center; gap: 6px; justify-content: flex-end; }
   .topbar-logo-text { display: none; }
-  /* Hide theme toggle label on mobile — show icon only */
   .theme-toggle-label { display: none; }
 
-  /* Ticker strip: full width second row */
+  /* Ticker strip: full width, contained scroll */
   .ticker-strip {
-    order: 3;
+    grid-area: ticker;
     width: 100%;
-    flex-basis: 100%;
-    padding-bottom: 8px;
-    mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+    min-width: 0;
+    overflow-x: auto;
+    flex: none;
+    padding-bottom: 2px;
+    mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
   }
 
   /* Clock: hide on mobile */

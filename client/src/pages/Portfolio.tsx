@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { formatPrice, formatPct } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useIsMobile } from "@/hooks/useMobile";
 
 // ─── Sentiment bar component ───────────────────────────────────────────────────
 
@@ -80,20 +81,169 @@ const PIE_COLORS = [
   "#06b6d4","#ec4899","#84cc16","#f97316","#64748b","#a78bfa",
 ];
 
-function useIsMobile() {
-  const [m, setM] = useState(() => window.innerWidth < 768);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const h = (e: MediaQueryListEvent) => setM(e.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
-  return m;
+export default function Portfolio() {
+  const isMobile = useIsMobile();
+  return isMobile ? <MobilePortfolio /> : <DesktopPortfolio />;
 }
 
-export default function Portfolio() {
+// ─── Mobile Portfolio ─────────────────────────────────────────────────────────
+
+function MobilePortfolio() {
   const qc = useQueryClient();
-  const isMobile = useIsMobile();
+  const [showAdd, setShowAdd] = useState(false);
+  const [newTicker, setNewTicker] = useState("");
+  const [newShares, setNewShares] = useState("");
+  const [newCost, setNewCost] = useState("");
+
+  const { data: portfolio, isLoading } = useQuery({
+    queryKey: ["/api/portfolio/quotes"],
+    queryFn: () => apiRequest("GET", "/api/portfolio/quotes"),
+    refetchInterval: 60000,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/holdings/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/portfolio/quotes"] }),
+  });
+  const addMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/holdings", data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/portfolio/quotes"] }); setShowAdd(false); setNewTicker(""); setNewShares(""); setNewCost(""); },
+  });
+
+  const holdings = Array.isArray(portfolio) ? portfolio : [];
+  const sorted = [...holdings].sort((a: any, b: any) => (b.value || 0) - (a.value || 0));
+  const total = holdings.reduce((s: number, h: any) => s + (h.value || 0), 0);
+  const dayChg = holdings.reduce((s: number, h: any) => s + ((h.change || 0) * h.shares), 0);
+  const dayChgPct = total > 0 ? (dayChg / (total - dayChg)) * 100 : 0;
+  const up = holdings.filter((h: any) => h.changePct > 0).length;
+  const down = holdings.filter((h: any) => h.changePct < 0).length;
+  const pieData = [...holdings].filter((h: any) => h.value > 0).sort((a: any, b: any) => b.value - a.value)
+    .map((h: any, i: number) => ({ name: h.ticker, value: h.value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1 className="page-title">Portfolio</h1>
+          <p className="page-sub">prices refresh every 60s</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)} style={{ marginTop: 4, fontSize: 12 }}>
+          {showAdd ? "✕" : "+ Add"}
+        </button>
+      </div>
+
+      {/* Add form */}
+      {showAdd && (
+        <div style={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 14, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))", textTransform: "uppercase", letterSpacing: "0.07em" }}>Add Holding</div>
+          {[{label:"Ticker",val:newTicker,set:setNewTicker,ph:"NVDA"},{label:"Shares",val:newShares,set:setNewShares,ph:"3"},{label:"Cost Basis",val:newCost,set:setNewCost,ph:"120.00 (optional)"}].map(({label,val,set,ph}) => (
+            <div key={label}>
+              <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))", marginBottom: 4 }}>{label}</div>
+              <input className="input" value={val} onChange={e => set(e.target.value)} placeholder={ph} style={{ width: "100%" }} />
+            </div>
+          ))}
+          <button className="btn btn-primary" style={{ width: "100%" }}
+            onClick={() => addMutation.mutate({ ticker: newTicker.toUpperCase().trim(), shares: parseFloat(newShares), costBasis: newCost ? parseFloat(newCost) : null })}
+            disabled={!newTicker || !newShares || addMutation.isPending}>
+            {addMutation.isPending ? "Adding…" : "Add Holding"}
+          </button>
+        </div>
+      )}
+
+      {/* Stats strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+        <div style={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 14, padding: "12px 14px" }}>
+          <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Value</div>
+          <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}>{total > 0 ? `$${total.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}</div>
+          {dayChg !== 0 && <div style={{ fontSize: 10, fontWeight: 600, fontFamily: "var(--font-mono)", color: dayChg >= 0 ? "#34c759" : "#ff453a", marginTop: 2 }}>{dayChg >= 0 ? "+" : ""}${Math.abs(dayChg).toFixed(0)}</div>}
+        </div>
+        <div style={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 14, padding: "12px 14px" }}>
+          <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Day %</div>
+          <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--font-mono)", color: dayChgPct >= 0 ? "#34c759" : "#ff453a" }}>{dayChgPct >= 0 ? "+" : ""}{dayChgPct.toFixed(2)}%</div>
+        </div>
+        <div style={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 14, padding: "12px 14px" }}>
+          <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Positions</div>
+          <div style={{ fontSize: 16, fontWeight: 800, fontFamily: "var(--font-mono)" }}>{holdings.length}</div>
+          <div style={{ fontSize: 10, fontFamily: "var(--font-mono)", marginTop: 2 }}><span style={{ color: "#34c759" }}>{up}↑</span> <span style={{ color: "#ff453a" }}>{down}↓</span></div>
+        </div>
+      </div>
+
+      {/* Donut + legend */}
+      {pieData.length > 0 && (
+        <div style={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 14, padding: "14px 16px", display: "flex", gap: 16, alignItems: "center" }}>
+          <div style={{ flexShrink: 0 }}>
+            <ResponsiveContainer width={80} height={80}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={22} outerRadius={36} dataKey="value" paddingAngle={2}>
+                  {pieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "5px 12px", flex: 1 }}>
+            {pieData.map((d: any) => (
+              <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color, flexShrink: 0 }} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "hsl(var(--fg-muted))" }}>{d.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Sentiment */}
+      <SentimentSection />
+
+      {/* Holdings */}
+      <div>
+        <div style={{ fontSize: 9, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 10 }}>Holdings</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {isLoading
+            ? Array(6).fill(0).map((_, i) => <div key={i} className="skeleton" style={{ height: 72, borderRadius: 14 }} />)
+            : sorted.map((h: any) => {
+                const alloc = total > 0 ? (h.value / total) * 100 : 0;
+                const up = h.changePct > 0;
+                const dn = h.changePct < 0;
+                const color = up ? "#34c759" : dn ? "#ff453a" : "hsl(var(--fg-dim))";
+                return (
+                  <div key={h.id} style={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 14, padding: "13px 15px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 7 }}>
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 15, fontWeight: 800 }}>{h.ticker}</span>
+                          <span style={{ fontSize: 11, color: "hsl(var(--fg-dim))" }}>{h.shares} sh</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: "hsl(var(--fg-dim))", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.shortName || h.displayName}</div>
+                        <div style={{ marginTop: 7, height: 3, background: "hsl(var(--border-soft))", borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ width: `${Math.min(alloc * 2.5, 100)}%`, height: "100%", background: "var(--red-hex)", borderRadius: 2 }} />
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        {h.price != null ? (
+                          <>
+                            <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--font-mono)" }}>${formatPrice(h.price)}</div>
+                            <div style={{ fontSize: 12, fontWeight: 600, fontFamily: "var(--font-mono)", color }}>{h.changePct >= 0 ? "+" : ""}{h.changePct?.toFixed(2)}%</div>
+                            <div style={{ fontSize: 10, color: "hsl(var(--fg-dim))", fontFamily: "var(--font-mono)", marginTop: 1 }}>${formatPrice(h.value, 0)}</div>
+                          </>
+                        ) : <div className="skeleton" style={{ width: 60, height: 36, borderRadius: 6 }} />}
+                        <button onClick={() => { if (confirm("Remove?")) deleteMutation.mutate(h.id); }}
+                          style={{ marginTop: 4, background: "none", border: "none", color: "hsl(var(--fg-dim))", cursor: "pointer", fontSize: 16, padding: 0 }}>×</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Desktop Portfolio ────────────────────────────────────────────────────────
+
+function DesktopPortfolio() {
+  const qc = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [newTicker, setNewTicker] = useState("");
   const [newShares, setNewShares] = useState("");
@@ -105,164 +255,72 @@ export default function Portfolio() {
     queryFn: () => apiRequest("GET", "/api/portfolio/quotes"),
     refetchInterval: 60000,
   });
-
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/holdings/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/portfolio/quotes"] }),
   });
-
   const addMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/holdings", data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/portfolio/quotes"] });
-      setShowAdd(false); setNewTicker(""); setNewShares(""); setNewCost("");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/portfolio/quotes"] }); setShowAdd(false); setNewTicker(""); setNewShares(""); setNewCost(""); },
   });
 
   const holdings = Array.isArray(portfolio) ? portfolio : [];
-  const sorted   = [...holdings].sort((a: any, b: any) => (b[sort] || 0) - (a[sort] || 0));
-  const total    = holdings.reduce((s: number, h: any) => s + (h.value || 0), 0);
-  const dayChg   = holdings.reduce((s: number, h: any) => s + ((h.change || 0) * h.shares), 0);
-  const up       = holdings.filter((h: any) => h.changePct > 0).length;
-  const down     = holdings.filter((h: any) => h.changePct < 0).length;
-
-  const pieData = [...holdings]
-    .filter((h: any) => h.value > 0)
-    .sort((a: any, b: any) => b.value - a.value)
+  const sorted = [...holdings].sort((a: any, b: any) => (b[sort] || 0) - (a[sort] || 0));
+  const total = holdings.reduce((s: number, h: any) => s + (h.value || 0), 0);
+  const dayChg = holdings.reduce((s: number, h: any) => s + ((h.change || 0) * h.shares), 0);
+  const up = holdings.filter((h: any) => h.changePct > 0).length;
+  const down = holdings.filter((h: any) => h.changePct < 0).length;
+  const pieData = [...holdings].filter((h: any) => h.value > 0).sort((a: any, b: any) => b.value - a.value)
     .map((h: any, i: number) => ({ name: h.ticker, value: h.value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 
   return (
     <div style={{ maxWidth: 1100 }}>
-      {/* Header */}
       <div className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h1 className="page-title">Portfolio</h1>
-          <p className="page-sub">Yahoo Finance · prices refresh every 60s</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)} style={{ marginTop: 4 }}>
-          {showAdd ? "✕ Cancel" : "+ Add"}
-        </button>
+        <div><h1 className="page-title">Portfolio</h1><p className="page-sub">Yahoo Finance · prices refresh every 60s</p></div>
+        <button className="btn btn-primary" onClick={() => setShowAdd(!showAdd)} style={{ marginTop: 4 }}>{showAdd ? "✕ Cancel" : "+ Add"}</button>
       </div>
-
-      {/* Add holding form */}
       {showAdd && (
         <div className="card" style={{ marginBottom: 16 }}>
           <div className="section-label" style={{ marginBottom: 12 }}>Add Holding</div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-            {[
-              { label: "Ticker", val: newTicker, set: setNewTicker, ph: "NVDA", w: 100 },
-              { label: "Shares", val: newShares, set: setNewShares, ph: "3",    w: 100 },
-              { label: "Cost Basis (optional)", val: newCost, set: setNewCost, ph: "120.00", w: 140 },
-            ].map(({ label, val, set, ph, w }) => (
+            {[{label:"Ticker",val:newTicker,set:setNewTicker,ph:"NVDA",w:100},{label:"Shares",val:newShares,set:setNewShares,ph:"3",w:100},{label:"Cost Basis (optional)",val:newCost,set:setNewCost,ph:"120.00",w:140}].map(({label,val,set,ph,w}) => (
               <div key={label}>
                 <div style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))", marginBottom: 5 }}>{label}</div>
-                <input
-                  className="input"
-                  value={val} onChange={e => set(e.target.value)}
-                  placeholder={ph}
-                  style={{ width: w }}
-                />
+                <input className="input" value={val} onChange={e => set(e.target.value)} placeholder={ph} style={{ width: w }} />
               </div>
             ))}
-            <button
-              className="btn btn-primary"
-              onClick={() => addMutation.mutate({
-                ticker: newTicker.toUpperCase().trim(),
-                shares: parseFloat(newShares),
-                costBasis: newCost ? parseFloat(newCost) : null,
-              })}
-              disabled={!newTicker || !newShares || addMutation.isPending}
-            >
-              {addMutation.isPending ? "Adding…" : "Add"}
-            </button>
+            <button className="btn btn-primary" onClick={() => addMutation.mutate({ ticker: newTicker.toUpperCase().trim(), shares: parseFloat(newShares), costBasis: newCost ? parseFloat(newCost) : null })} disabled={!newTicker || !newShares || addMutation.isPending}>{addMutation.isPending ? "Adding…" : "Add"}</button>
           </div>
         </div>
       )}
-
-      {/* Summary cards */}
       <div className="kpi-grid-3" style={{ display: "grid", gap: 10, marginBottom: 16 }}>
-        {/* Total value */}
         <div className="stat-card">
           <div className="stat-label">Total Value</div>
-          <div className="stat-value" style={{ fontSize: isMobile ? 16 : 22 }}>
-            {total > 0 ? `$${total.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
-          </div>
-          {dayChg !== 0 && (
-            <div className={`stat-change ${dayChg >= 0 ? "up" : "down"}`}>
-              {dayChg >= 0 ? "+" : "−"}${Math.abs(dayChg).toFixed(2)} today
-            </div>
-          )}
+          <div className="stat-value">{total > 0 ? `$${total.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}</div>
+          {dayChg !== 0 && <div className={`stat-change ${dayChg >= 0 ? "up" : "down"}`}>{dayChg >= 0 ? "+" : "−"}${Math.abs(dayChg).toFixed(2)} today</div>}
         </div>
-
-        {/* Positions */}
         <div className="stat-card">
           <div className="stat-label">Positions</div>
-          <div className="stat-value" style={{ fontSize: isMobile ? 16 : 22 }}>{holdings.length}</div>
-          <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))" }}>
-            <span className="up">{up}↑</span> <span className="down">{down}↓</span>
-          </div>
+          <div className="stat-value">{holdings.length}</div>
+          <div style={{ fontSize: 11, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))" }}><span className="up">{up}↑</span> <span className="down">{down}↓</span></div>
         </div>
-
-        {/* Allocation donut — spans full width on mobile as its own row */}
-        {!isMobile && pieData.length > 0 && (
-          <div className="stat-card" style={{ gridRow: "span 1" }}>
+        {pieData.length > 0 && (
+          <div className="stat-card">
             <div className="stat-label">Allocation</div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <ResponsiveContainer width={80} height={80}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={24} outerRadius={38} dataKey="value" paddingAngle={2}>
-                    {pieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(v: any) => [`$${Number(v).toFixed(0)}`, ""]}
-                    contentStyle={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 8, fontSize: 11 }} />
-                </PieChart>
+                <PieChart><Pie data={pieData} cx="50%" cy="50%" innerRadius={24} outerRadius={38} dataKey="value" paddingAngle={2}>{pieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}</Pie>
+                  <Tooltip formatter={(v: any) => [`$${Number(v).toFixed(0)}`, ""]} contentStyle={{ background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))", borderRadius: 8, fontSize: 11 }} /></PieChart>
               </ResponsiveContainer>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 8px" }}>
-                {pieData.slice(0, 6).map((d: any) => (
-                  <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color, flexShrink: 0 }} />
-                    <span style={{ fontFamily: "var(--font-mono)", color: "hsl(var(--fg-muted))" }}>{d.name}</span>
-                  </div>
-                ))}
+                {pieData.slice(0, 6).map((d: any) => (<div key={d.name} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}><div style={{ width: 7, height: 7, borderRadius: 2, background: d.color }} /><span style={{ fontFamily: "var(--font-mono)", color: "hsl(var(--fg-muted))" }}>{d.name}</span></div>))}
               </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Mobile donut */}
-      {isMobile && pieData.length > 0 && (
-        <div className="card" style={{ marginBottom: 16, display: "flex", gap: 16, alignItems: "center" }}>
-          <ResponsiveContainer width={80} height={80}>
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={22} outerRadius={36} dataKey="value" paddingAngle={2}>
-                {pieData.map((e: any, i: number) => <Cell key={i} fill={e.color} />)}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", flex: 1 }}>
-            {pieData.map((d: any) => (
-              <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10 }}>
-                <div style={{ width: 7, height: 7, borderRadius: 2, background: d.color }} />
-                <span style={{ fontFamily: "var(--font-mono)", color: "hsl(var(--fg-muted))" }}>{d.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Sentiment analysis */}
       <SentimentSection />
-
-      {/* Holdings — mobile: cards, desktop: table */}
-      {isMobile ? (
-        <MobileHoldings sorted={sorted} isLoading={isLoading} total={total} onDelete={(id) => {
-          if (confirm("Remove this holding?")) deleteMutation.mutate(id);
-        }} />
-      ) : (
-        <DesktopTable sorted={sorted} isLoading={isLoading} total={total} sort={sort} setSort={setSort}
-          onDelete={(id) => { if (confirm("Remove this holding?")) deleteMutation.mutate(id); }} />
-      )}
+      <DesktopTable sorted={sorted} isLoading={isLoading} total={total} sort={sort} setSort={setSort} onDelete={(id: number) => { if (confirm("Remove this holding?")) deleteMutation.mutate(id); }} />
     </div>
   );
 }
