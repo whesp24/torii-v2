@@ -808,6 +808,8 @@ input, textarea { font-family: inherit; }
   left: 0;
   right: 0;
   display: flex;
+  justify-content: space-around;
+  align-items: stretch;
   background: hsl(var(--bg2) / 0.97);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
