@@ -796,7 +796,7 @@ input, textarea { font-family: inherit; }
 
 .app-shell.mobile .main-scroll {
   padding: 16px;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 84px);
+  padding-bottom: 120px;
   overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -851,7 +851,7 @@ input, textarea { font-family: inherit; }
    RESPONSIVE OVERRIDES
 ───────────────────────────────────────────── */
 @media (max-width: 767px) {
-  .main-scroll { padding: 16px; padding-bottom: calc(env(safe-area-inset-bottom) + 84px); }
+  .main-scroll { padding: 16px; padding-bottom: 120px; }
 
   .page-title { font-size: 18px; }
 
@@ -965,6 +965,6 @@ input, textarea { font-family: inherit; }
   /* Mobile main scroll padding */
   .app-shell:not(.mobile) .main-scroll {
     padding: 16px !important;
-    padding-bottom: calc(env(safe-area-inset-bottom) + 76px) !important;
+    padding-bottom: 120px !important;
   }
 }
