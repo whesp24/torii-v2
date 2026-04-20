@@ -5,6 +5,76 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
+// ─── Sentiment bar component ───────────────────────────────────────────────────
+
+function SentimentSection() {
+  const { data: sentiments, isLoading } = useQuery({
+    queryKey: ["/api/sentiment"],
+    queryFn: () => apiRequest("GET", "/api/sentiment"),
+    staleTime: 30 * 60 * 1000,
+    refetchInterval: 30 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="section-label" style={{ marginBottom: 12 }}>Portfolio Sentiment</div>
+        {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 28, marginBottom: 8, borderRadius: 6 }} />)}
+      </div>
+    );
+  }
+
+  const items: any[] = Array.isArray(sentiments) ? sentiments : [];
+  if (!items.length) return null;
+
+  const sorted = [...items].sort((a, b) => b.score - a.score);
+
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div className="section-label" style={{ marginBottom: 0 }}>Portfolio Sentiment</div>
+        <div style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "hsl(var(--fg-dim))" }}>news + analyst · 30m cache</div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {sorted.map((s: any) => {
+          const isBull = s.label === "BULLISH";
+          const isBear = s.label === "BEARISH";
+          const barColor = isBull ? "#34c759" : isBear ? "#ff453a" : "hsl(var(--fg-dim))";
+          const labelColor = isBull ? "#34c759" : isBear ? "#ff453a" : "hsl(var(--fg-muted))";
+          return (
+            <div key={s.ticker} style={{ display: "grid", gridTemplateColumns: "60px 1fr 90px", alignItems: "center", gap: 10 }}>
+              {/* Ticker */}
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700 }}>{s.ticker}</span>
+              {/* Bar */}
+              <div style={{ position: "relative", height: 6, borderRadius: 3, background: "hsl(var(--border-soft))", overflow: "hidden" }}>
+                <div style={{
+                  position: "absolute", left: 0, top: 0, bottom: 0,
+                  width: `${s.score}%`,
+                  background: `linear-gradient(90deg, ${isBear ? "#ff453a" : isBull ? "#34c759" : "hsl(var(--fg-dim))"}, ${isBull ? "#30d158" : isBear ? "#c8002a" : "hsl(var(--fg-dim))"})`,
+                  borderRadius: 3,
+                  transition: "width 0.6s ease",
+                }} />
+              </div>
+              {/* Label */}
+              <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", fontWeight: 700, color: labelColor }}>
+                  {s.score}
+                </span>
+                <span style={{
+                  fontSize: 9, fontFamily: "var(--font-mono)", fontWeight: 600, color: labelColor,
+                  background: `${barColor}18`, borderRadius: 4, padding: "1px 5px", letterSpacing: "0.05em",
+                }}>
+                  {s.label}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 const PIE_COLORS = [
   "#C8002A","#3b82f6","#22c55e","#f59e0b","#8b5cf6",
   "#06b6d4","#ec4899","#84cc16","#f97316","#64748b","#a78bfa",
@@ -180,6 +250,9 @@ export default function Portfolio() {
           </div>
         </div>
       )}
+
+      {/* Sentiment analysis */}
+      <SentimentSection />
 
       {/* Holdings — mobile: cards, desktop: table */}
       {isMobile ? (

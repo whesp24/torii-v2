@@ -49,7 +49,171 @@
   /* Shadows */
   --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
   --shadow-float: 0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+
+  /* Theme-specific extras */
+  --topbar-bg: hsl(var(--bg2) / 0.85);
+  --card-bg: hsl(var(--surface));
+  --card-border: hsl(var(--border-soft));
+  --sidebar-bg: hsl(var(--bg2));
+  --input-bg: hsl(var(--surface2));
+  --scrollbar-thumb: hsl(var(--border));
+  --green-hex: #34c759;
+  --chart-dot-fill: hsl(var(--bg2));
 }
+
+/* ─────────────────────────────────────────────
+   LIQUID THEME (light mode)
+───────────────────────────────────────────── */
+.liquid {
+  /* Backgrounds — Apple off-white */
+  --bg:           0 0% 96%;       /* #F5F5F7 */
+  --bg2:          0 0% 92%;       /* #EBEBED */
+  --surface:      0 0% 100%;      /* pure white */
+  --surface2:     220 14% 96%;    /* very light blue-grey */
+  --overlay:      220 13% 91%;
+
+  /* Borders — very subtle */
+  --border-soft:  220 10% 88%;
+  --border:       220 10% 80%;
+
+  /* Text — Apple dark */
+  --fg:           0 0% 10%;       /* #1A1A1A */
+  --fg-muted:     0 0% 38%;       /* medium grey */
+  --fg-dim:       0 0% 58%;       /* light grey */
+
+  /* Accent — Apple blue replaces crimson */
+  --red-hex:      #0071E3;
+  --red-hsl:      211 100% 44%;
+  --green-hex:    #34C759;
+  --yellow-hex:   #FF9500;
+
+  /* Shadows — soft drop shadows */
+  --shadow-card:  0 2px 16px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.05);
+  --shadow-float: 0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+
+  /* Theme-specific extras */
+  --topbar-bg:    rgba(245,245,247,0.85);
+  --card-bg:      rgba(255,255,255,0.75);
+  --card-border:  rgba(0,0,0,0.07);
+  --sidebar-bg:   rgba(235,235,237,0.9);
+  --input-bg:     rgba(255,255,255,0.9);
+  --scrollbar-thumb: rgba(0,0,0,0.18);
+  --chart-dot-fill: #ffffff;
+}
+
+/* Liquid — override component backgrounds that use raw hsl() */
+.liquid html,
+.liquid body,
+.liquid #root,
+.liquid .app-shell {
+  background: hsl(var(--bg));
+  color: hsl(var(--fg));
+}
+
+/* Topbar glass */
+.liquid .topbar {
+  background: var(--topbar-bg);
+  border-bottom-color: var(--card-border);
+}
+
+/* Cards */
+.liquid .card,
+.liquid .card-sm,
+.liquid .kpi-card,
+.liquid .stat-card {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Sidebar */
+.liquid .sidebar {
+  background: var(--sidebar-bg);
+  border-right-color: var(--card-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.liquid .nav-item:hover  { background: rgba(0,0,0,0.05); }
+.liquid .nav-item.active { background: rgba(0,113,227,0.1); color: #0071E3; }
+.liquid .nav-item.active::before { background: #0071E3; }
+.liquid .holdings-label  { color: rgba(0,0,0,0.38); }
+.liquid .holding-row:hover { background: rgba(0,0,0,0.04); }
+.liquid .holding-ticker  { color: hsl(var(--fg)); }
+.liquid .holding-val     { color: hsl(var(--fg-muted)); }
+
+/* Bottom nav */
+.liquid .bottom-nav {
+  background: rgba(245,245,247,0.92);
+  border-top-color: var(--card-border);
+}
+.liquid .bottom-nav-item.active .bottom-nav-icon,
+.liquid .bottom-nav-item.active .bottom-nav-label {
+  color: #0071E3;
+}
+
+/* Ticker chips */
+.liquid .ticker-chip {
+  background: rgba(255,255,255,0.8);
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.liquid .ticker-chip:hover { background: rgba(255,255,255,1); }
+
+/* Inputs */
+.liquid .input {
+  background: var(--input-bg);
+  border-color: var(--card-border);
+  color: hsl(var(--fg));
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+.liquid .input:focus { border-color: #0071E3; box-shadow: 0 0 0 3px rgba(0,113,227,0.15); }
+.liquid .input::placeholder { color: hsl(var(--fg-dim)); }
+
+/* Filter tabs */
+.liquid .filter-strip { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.06); }
+.liquid .filter-tab   { color: hsl(var(--fg-muted)); }
+.liquid .filter-tab:hover  { background: rgba(0,0,0,0.05); color: hsl(var(--fg)); }
+.liquid .filter-tab.active { background: rgba(0,113,227,0.12); color: #0071E3; }
+
+/* Buttons */
+.liquid .btn-primary { background: #0071E3; color: white; }
+.liquid .btn-primary:hover { opacity: 0.88; }
+.liquid .btn-secondary { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); color: hsl(var(--fg)); }
+.liquid .btn-secondary:hover { background: rgba(0,0,0,0.1); }
+.liquid .btn-ghost { background: transparent; border-color: rgba(0,0,0,0.12); color: hsl(var(--fg-muted)); }
+.liquid .btn-ghost:hover { background: rgba(0,0,0,0.05); color: hsl(var(--fg)); }
+
+/* Skeleton */
+.liquid .skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.06) 75%);
+}
+
+/* Data table */
+.liquid .data-table th { background: rgba(0,0,0,0.03); border-bottom-color: rgba(0,0,0,0.08); color: hsl(var(--fg-muted)); }
+.liquid .data-table td { border-bottom-color: rgba(0,0,0,0.05); }
+.liquid .data-table tr:hover td { background: rgba(0,0,0,0.025); }
+
+/* Scrollbar */
+.liquid ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); }
+
+/* Stat accent card */
+.liquid .stat-card.accent { border-left-color: #0071E3; }
+
+/* Briefing */
+.liquid .briefing-box { background: rgba(255,255,255,0.8); border-color: rgba(0,0,0,0.07); }
+
+/* Section labels */
+.liquid .section-label { color: rgba(0,0,0,0.38); }
+.liquid .page-sub      { color: rgba(0,0,0,0.45); }
+
+/* Source badges */
+.liquid .source-badge { background: rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.1); color: rgba(0,0,0,0.55); }
+.liquid .source-badge.japan  { background: rgba(0,113,227,0.08); color: #0071E3; border-color: rgba(0,113,227,0.2); }
+
+/* Main scroll bg */
+.liquid .main-scroll { background: hsl(var(--bg)); }
 
 /* ─────────────────────────────────────────────
    RESET & BASE
@@ -349,6 +513,11 @@ input, textarea { font-family: inherit; }
 .stat-card:hover { border-color: hsl(var(--border)); }
 .stat-card.accent { border-left: 3px solid var(--red-hex); }
 
+/* KPI grid base definitions */
+.kpi-grid-6 { grid-template-columns: repeat(3, 1fr); min-width: 0; }
+.kpi-grid-3 { grid-template-columns: repeat(3, 1fr); min-width: 0; }
+.kpi-grid-6 > *, .kpi-grid-3 > * { min-width: 0; }
+
 .stat-label {
   font-family: var(--font-mono);
   font-size: 9px;
@@ -605,7 +774,7 @@ input, textarea { font-family: inherit; }
 ───────────────────────────────────────────── */
 .app-shell.mobile {
   grid-template-columns: 1fr;
-  grid-template-rows: var(--topbar-h) 1fr auto;
+  grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "topbar"
     "main"
@@ -687,9 +856,10 @@ input, textarea { font-family: inherit; }
   .x-voices-panel { display: none !important; }
 
   /* Ticker strip smaller */
-  .ticker-chip { padding: 4px 8px; }
+  .ticker-chip { padding: 4px 8px; gap: 4px; }
   .ticker-sym  { font-size: 9px; }
   .ticker-price { display: none; }
+  .ticker-chg  { font-size: 9px; }
 
   /* Table: hide low-priority columns */
   .col-hide-mobile { display: none !important; }
@@ -697,9 +867,30 @@ input, textarea { font-family: inherit; }
   /* Cards */
   .card, .kpi-card { padding: 14px; border-radius: var(--r-md); }
 
-  /* Topbar: tighter */
-  .topbar { padding: 0 14px; gap: 8px; }
+  /* Topbar: two-row layout on mobile */
+  .topbar {
+    height: auto;
+    min-height: var(--topbar-h);
+    flex-wrap: wrap;
+    padding: 8px 14px 0;
+    gap: 6px;
+    align-items: center;
+  }
+  /* Logo row: logo left, right controls right */
+  .topbar-logo { order: 1; flex-shrink: 0; }
+  .topbar-right { order: 2; margin-left: auto; gap: 6px; }
   .topbar-logo-text { display: none; }
+  /* Hide theme toggle label on mobile — show icon only */
+  .theme-toggle-label { display: none; }
+
+  /* Ticker strip: full width second row */
+  .ticker-strip {
+    order: 3;
+    width: 100%;
+    flex-basis: 100%;
+    padding-bottom: 8px;
+    mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+  }
 
   /* Clock: hide on mobile */
   .clock-stack { display: none; }

@@ -11,9 +11,9 @@ const VAPID_EMAIL   = "mailto:whesp24@gmail.com";
 
 if (!VAPID_PRIVATE) {
   console.warn("[push] VAPID_PRIVATE env var not set — push notifications disabled");
+} else {
+  webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
 }
-
-webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
 
 export { VAPID_PUBLIC };
 
@@ -27,6 +27,7 @@ export interface PushPayload {
 
 // Send to all stored subscriptions
 export async function sendPushToAll(payload: PushPayload): Promise<void> {
+  if (!VAPID_PRIVATE) return; // no key configured — skip silently
   const subs = storage.getPushSubscriptions();
   if (!subs.length) return;
 

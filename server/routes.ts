@@ -6,6 +6,7 @@ import { fetchAllNews, filterByTicker } from "./news";
 import { computeOutlook } from "./outlook";
 import { generateBriefing } from "./briefing";
 import { insertHoldingSchema } from "@shared/schema";
+import { getSentimentBatch } from "./sentiment";
 
 // ── Symbol lists ─────────────────────────────────────────────────────────────
 
@@ -257,18 +258,31 @@ export async function registerRoutes(httpServer: ReturnType<typeof createServer>
     res.json({ ok: true });
   });
 
-  // ── Sentiment (Fear & Greed) ──────────────────────────────────────────────
+  // ── Portfolio Sentiment ──────────────────────────────────────────────────
 
   app.get("/api/sentiment", async (_req, res) => {
     try {
-      const data = await cachedAsync("sentiment", 60 * 60 * 1000, async () => {
-        const { execSync } = require("child_process");
-        const raw = execSync(`curl -s --max-time 10 "https://api.alternative.me/fng/?limit=7"`, { encoding: "utf-8" });
-        return JSON.parse(raw);
-      });
-      res.json(data?.data || []);
-    } catch {
+      const holdings = storage.getHoldings();
+      const tickers  = [...new Set(holdings.map(h => h.ticker))];
+      const data = await cachedAsync("portfolio-sentiment", 30 * 60 * 1000, () => getSentimentBatch(tickers));
+      res.json(data);
+    } catch (e) {
+      console.error("[sentiment]", e);
       res.json([]);
+    }
+  });
+
+  // ── Per-ticker sentiment ──────────────────────────────────────────────────
+
+  app.get("/api/sentiment/:ticker", async (req, res) => {
+    try {
+      const { ticker } = req.params;
+      const data = await cachedAsync(`sentiment-${ticker}`, 30 * 60 * 1000, () =>
+        import("./sentiment").then(m => m.getSentiment(ticker))
+      );
+      res.json(data);
+    } catch (e) {
+      res.status(500).json({ error: String(e) });
     }
   });
 

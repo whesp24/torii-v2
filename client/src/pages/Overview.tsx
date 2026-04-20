@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { formatPrice, formatPct, simpleMarkdown, timeAgo, sourceClass } from "@/lib/utils";
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceDot } from "recharts";
 import { Link } from "wouter";
 
 const X_ACCOUNTS = [
@@ -41,12 +41,7 @@ function MarketKPIs() {
   ];
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
-      gap: 10,
-      marginBottom: 20,
-    }} className="kpi-grid-6">
+    <div className="kpi-grid-6" style={{ display: "grid", gap: 10, marginBottom: 20 }}>
       {kpis.map(({ label, q, accent, dec, invert }: any) => {
         const price = q?.regularMarketPrice;
         const pct   = q?.regularMarketChangePercent;
@@ -98,7 +93,13 @@ function NikkeiChart() {
     .filter((d: any) => d.price != null);
 
   const isUp = (chartData.at(-1)?.price ?? 0) >= (chartData[0]?.price ?? 0);
-  const color = isUp ? "var(--green-hex)" : "#ff6b6b";
+  const color = isUp ? "#34c759" : "#ff453a";
+  const glowId = isUp ? "chartGradGreen" : "chartGradRed";
+
+  // Pick ~6 evenly-spaced data points for visible dots
+  const dotIndices = chartData.length > 6
+    ? Array.from({ length: 6 }, (_, i) => Math.round(i * (chartData.length - 1) / 5))
+    : chartData.map((_: any, i: number) => i);
 
   return (
     <div>
@@ -108,15 +109,22 @@ function NikkeiChart() {
           {chartData.at(-1)?.price?.toLocaleString("en-US", { maximumFractionDigits: 0 })}
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={120}>
-        <AreaChart data={chartData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={140}>
+        <AreaChart data={chartData} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
           <defs>
-            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor={color} stopOpacity={0.25} />
-              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            <linearGradient id={glowId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"  stopColor={color} stopOpacity={0.35} />
+              <stop offset="70%" stopColor={color} stopOpacity={0.08} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <XAxis dataKey="date" hide />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 9, fill: "rgba(255,255,255,0.3)", fontFamily: "var(--font-mono)" }}
+            tickLine={false}
+            axisLine={false}
+            interval={Math.floor(chartData.length / 4)}
+          />
           <YAxis hide domain={["auto", "auto"]} />
           <Tooltip
             contentStyle={{
@@ -127,7 +135,28 @@ function NikkeiChart() {
             formatter={(v: any) => [v?.toLocaleString(), "NKY"]}
             labelStyle={{ color: "hsl(var(--fg-muted))" }}
           />
-          <Area type="monotone" dataKey="price" stroke={color} strokeWidth={2} fill="url(#chartGrad)" dot={false} />
+          <Area
+            type="monotoneX"
+            dataKey="price"
+            stroke={color}
+            strokeWidth={2}
+            fill={`url(#${glowId})`}
+            dot={(_props: any) => {
+              const { cx, cy, index } = _props;
+              if (!dotIndices.includes(index)) return <g key={index} />;
+              return (
+                <circle
+                  key={index}
+                  cx={cx} cy={cy} r={3.5}
+                  fill="hsl(var(--bg2))"
+                  stroke={color}
+                  strokeWidth={1.5}
+                  style={{ filter: `drop-shadow(0 0 3px ${color}80)` }}
+                />
+              );
+            }}
+            activeDot={{ r: 5, fill: color, stroke: "hsl(var(--bg))", strokeWidth: 2 }}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>

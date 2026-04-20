@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useState, useEffect } from "react";
 import { ToriiLogo } from "./Sidebar";
+import { useTheme } from "@/App";
 
 function formatNum(n: number, dec = 2) {
   if (n == null || isNaN(n)) return "—";
@@ -99,6 +100,46 @@ function NotificationBell() {
   );
 }
 
+// ─── Theme toggle ────────────────────────────────────────────────────────────
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const isLiquid = theme === "liquid";
+
+  return (
+    <button
+      onClick={toggle}
+      title={isLiquid ? "Switch to Ember (dark)" : "Switch to Liquid (light)"}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 5,
+        padding: "4px 10px",
+        borderRadius: 999,
+        border: isLiquid
+          ? "1px solid rgba(0,0,0,0.12)"
+          : "1px solid hsl(var(--border-soft))",
+        background: isLiquid
+          ? "rgba(255,255,255,0.85)"
+          : "hsl(var(--surface))",
+        cursor: "pointer",
+        fontSize: 11,
+        fontFamily: "var(--font-mono)",
+        fontWeight: 600,
+        letterSpacing: "0.04em",
+        color: isLiquid ? "#1D1D1F" : "hsl(var(--fg-muted))",
+        flexShrink: 0,
+        transition: "all 0.25s ease",
+        boxShadow: isLiquid ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+      }}
+    >
+      <span style={{ fontSize: 13, lineHeight: 1 }}>
+        {isLiquid ? "☀︎" : "⛩"}
+      </span>
+      <span className="theme-toggle-label">{isLiquid ? "LIQUID" : "EMBER"}</span>
+    </button>
+  );
+}
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64  = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -161,8 +202,9 @@ export default function Topbar() {
         })}
       </div>
 
-      {/* Clock */}
+      {/* Right controls */}
       <div className="topbar-right">
+        <ThemeToggle />
         <NotificationBell />
         <Clock />
       </div>
