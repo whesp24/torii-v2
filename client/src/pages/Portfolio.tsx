@@ -180,7 +180,7 @@ export default function Portfolio() {
       )}
 
       {/* Summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+      <div className="kpi-grid-3" style={{ display: "grid", gap: 10, marginBottom: 16 }}>
         {/* Total value */}
         <div className="stat-card">
           <div className="stat-label">Total Value</div>
