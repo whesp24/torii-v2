@@ -787,11 +787,10 @@ input, textarea { font-family: inherit; }
 ───────────────────────────────────────────── */
 .app-shell.mobile {
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   grid-template-areas:
     "topbar"
-    "main"
-    "bottomnav";
+    "main";
 }
 
 .app-shell.mobile .main-scroll {
@@ -804,14 +803,17 @@ input, textarea { font-family: inherit; }
 
 /* Bottom Navigation */
 .bottom-nav {
-  grid-area: bottomnav;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   background: hsl(var(--bg2) / 0.97);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
   border-top: 1px solid hsl(var(--border-soft));
   padding-bottom: env(safe-area-inset-bottom);
-  z-index: 50;
+  z-index: 100;
 }
 
 .bottom-nav-item {
@@ -952,11 +954,10 @@ input, textarea { font-family: inherit; }
   /* Force mobile shell layout */
   .app-shell:not(.mobile) {
     grid-template-columns: 1fr !important;
-    grid-template-rows: auto 1fr auto !important;
+    grid-template-rows: auto 1fr !important;
     grid-template-areas:
       "topbar"
-      "main"
-      "bottomnav" !important;
+      "main" !important;
   }
   /* Hide desktop sidebar always on phones */
   .app-shell:not(.mobile) .sidebar { display: none !important; }
