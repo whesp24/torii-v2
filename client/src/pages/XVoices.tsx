@@ -1,15 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { timeAgo } from "@/lib/utils";
+import { useState } from "react";
 
-type Tweet = {
-  id: string;
-  text: string;
-  createdAt: string;
-  metrics: { like_count: number; retweet_count: number; reply_count: number };
-  author: { id: string; name: string; handle: string; avatar: string };
-  url: string;
-};
+const X_ACCOUNTS = [
+  { handle: "KevinLMak",       name: "Kevin Mak",       topics: ["Japan", "Macro", "FX"] },
+  { handle: "ContrarianCurse", name: "SuspendedCap",    topics: ["Equities", "Sentiment"] },
+  { handle: "dsundheim",       name: "D. Sundheim",     topics: ["Long/Short", "Equity"] },
+  { handle: "jeff_weinstein",  name: "Jeff Weinstein",  topics: ["Tech", "Venture"] },
+  { handle: "patrick_oshag",   name: "Patrick O'Shag",  topics: ["Value", "Capital"] },
+  { handle: "HannoLustig",     name: "Hanno Lustig",    topics: ["Macro", "Research"] },
+];
+
+// Most stable public Nitter instances
+const NITTER_HOST = "nitter.net";
 
 function XLogo({ size = 14, color = "currentColor" }: { size?: number; color?: string }) {
   return (
@@ -19,152 +20,81 @@ function XLogo({ size = 14, color = "currentColor" }: { size?: number; color?: s
   );
 }
 
-function TweetCard({ tweet }: { tweet: Tweet }) {
-  return (
-    <a
-      href={tweet.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ textDecoration: "none", display: "block" }}
-    >
-      <div style={{
-        padding: "14px 16px",
-        borderRadius: 16,
-        background: "hsl(var(--surface))",
-        border: "1px solid hsl(var(--border-soft))",
-        transition: "border-color 0.15s",
-      }}>
-        {/* Author row */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-          {tweet.author.avatar ? (
-            <img
-              src={tweet.author.avatar}
-              alt={tweet.author.name}
-              style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, objectFit: "cover" }}
-            />
-          ) : (
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-              background: "hsl(var(--secondary))",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <XLogo size={14} color="hsl(var(--fg-dim))" />
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "hsl(var(--fg))", letterSpacing: "-0.01em" }}>
-              {tweet.author.name}
-            </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#e05070" }}>
-              @{tweet.author.handle}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "hsl(var(--fg-dim))" }}>
-              {timeAgo(tweet.createdAt)}
-            </span>
-            <XLogo size={12} color="hsl(var(--fg-dim))" />
-          </div>
-        </div>
-
-        {/* Tweet text */}
-        <div style={{
-          fontSize: 14, lineHeight: 1.55, color: "hsl(var(--fg))",
-          whiteSpace: "pre-wrap", wordBreak: "break-word",
-        }}>
-          {tweet.text}
-        </div>
-
-        {/* Metrics */}
-        {tweet.metrics && (
-          <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
-            {[
-              { icon: "♥", val: tweet.metrics.like_count },
-              { icon: "↻", val: tweet.metrics.retweet_count },
-              { icon: "↩", val: tweet.metrics.reply_count },
-            ].map(({ icon, val }) => (
-              <span key={icon} style={{
-                fontFamily: "var(--font-mono)", fontSize: 11,
-                color: "hsl(var(--fg-dim))", display: "flex", alignItems: "center", gap: 4,
-              }}>
-                {icon} {val?.toLocaleString() ?? 0}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-    </a>
-  );
-}
-
 export default function XVoices() {
-  const { data: tweets = [], isLoading, error, refetch } = useQuery<Tweet[]>({
-    queryKey: ["/api/voices"],
-    queryFn: () => apiRequest("GET", "/api/voices"),
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 10 * 60 * 1000,
-    retry: 1,
-  });
+  const [selected, setSelected] = useState(X_ACCOUNTS[0].handle);
+  const acct = X_ACCOUNTS.find(a => a.handle === selected)!;
 
   return (
-    <div style={{ maxWidth: 680, paddingBottom: 24 }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
+    <div style={{ paddingBottom: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+          <XLogo size={20} color="hsl(var(--fg))" /> Voices
+        </h1>
+      </div>
+      <p className="page-sub" style={{ marginBottom: 14 }}>Curated X accounts · macro, markets & Japan</p>
+
+      {/* Account picker — horizontal scroll chips */}
+      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, marginBottom: 14, scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+        {X_ACCOUNTS.map(a => (
+          <button
+            key={a.handle}
+            onClick={() => setSelected(a.handle)}
+            style={{
+              flexShrink: 0,
+              padding: "7px 13px",
+              borderRadius: 999,
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              fontWeight: 700,
+              background: selected === a.handle ? "#BC0024" : "hsl(var(--surface))",
+              color: selected === a.handle ? "#fff" : "hsl(var(--fg-dim))",
+              transition: "all 0.15s",
+            }}
+          >
+            @{a.handle}
+          </button>
+        ))}
+      </div>
+
+      {/* Selected account label */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div>
-          <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <XLogo size={20} color="hsl(var(--fg))" />
-            Voices
-          </h1>
-          <p className="page-sub">6 accounts · merged chronological feed</p>
+          <span style={{ fontWeight: 700, fontSize: 14, color: "hsl(var(--fg))" }}>{acct.name}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#e05070", marginLeft: 8 }}>@{acct.handle}</span>
         </div>
-        <button
-          onClick={() => refetch()}
+        <a
+          href={`https://x.com/${acct.handle}`}
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
-            fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700,
-            padding: "7px 13px", borderRadius: 10,
+            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
+            padding: "5px 11px", borderRadius: 999,
             background: "hsl(var(--surface))", border: "1px solid hsl(var(--border-soft))",
-            color: "hsl(var(--fg))", cursor: "pointer", flexShrink: 0,
+            color: "hsl(var(--fg-dim))", textDecoration: "none",
           }}
         >
-          ↻ Refresh
-        </button>
+          Open on X →
+        </a>
       </div>
 
-      {/* States */}
-      {isLoading ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {Array(6).fill(0).map((_, i) => (
-            <div key={i} className="skeleton" style={{ height: 110, borderRadius: 16 }} />
-          ))}
-        </div>
-      ) : error || (tweets as any)?.error ? (
-        <div style={{
-          padding: "32px 20px", textAlign: "center",
-          background: "hsl(var(--surface))", borderRadius: 16,
-          border: "1px solid hsl(var(--border-soft))",
-        }}>
-          <XLogo size={28} color="hsl(var(--fg-dim))" />
-          <div style={{ fontWeight: 600, fontSize: 14, color: "hsl(var(--fg))", margin: "12px 0 6px" }}>
-            Feed unavailable
-          </div>
-          <div style={{ fontSize: 12, color: "hsl(var(--fg-dim))" }}>
-            Make sure X_BEARER_TOKEN is set in Railway variables.
-          </div>
-        </div>
-      ) : tweets.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 20px", color: "hsl(var(--fg-dim))", fontSize: 13 }}>
-          No posts found.
-        </div>
-      ) : (
-        <>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "hsl(var(--fg-dim))", marginBottom: 12 }}>
-            {tweets.length} posts · newest first
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {tweets.map(t => <TweetCard key={t.id} tweet={t} />)}
-          </div>
-        </>
-      )}
+      {/* Nitter embed */}
+      <div style={{
+        borderRadius: 16,
+        overflow: "hidden",
+        border: "1px solid hsl(var(--border-soft))",
+        background: "hsl(var(--surface))",
+      }}>
+        <iframe
+          key={selected}
+          src={`https://${NITTER_HOST}/${selected}/with_replies#m`}
+          style={{ width: "100%", height: 600, border: "none", display: "block", colorScheme: "dark" }}
+          title={`@${selected} on X`}
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-top-navigation"
+        />
+      </div>
     </div>
   );
 }
