@@ -33,12 +33,14 @@ export function useTheme() { return useContext(ThemeContext); }
 // ─── Mobile hook ───────────────────────────────────────────────────────────────
 
 function useIsMobile() {
-  const [mobile, setMobile] = useState(() => window.innerWidth < 768);
+  // Use both width AND pointer type to reliably detect phones in Safari
+  const mq = "(max-width: 767px), (pointer: coarse) and (max-width: 1024px)";
+  const [mobile, setMobile] = useState(() => window.matchMedia(mq).matches);
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
+    const media = window.matchMedia(mq);
     const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    media.addEventListener("change", handler);
+    return () => media.removeEventListener("change", handler);
   }, []);
   return mobile;
 }

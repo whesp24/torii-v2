@@ -933,3 +933,28 @@ input, textarea { font-family: inherit; }
 @media (display-mode: standalone) {
   body { padding-top: env(safe-area-inset-top); }
 }
+
+/* ─────────────────────────────────────────────
+   PURE CSS MOBILE FALLBACK
+   Ensures phone layout even if JS hook misfires
+───────────────────────────────────────────── */
+@media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) {
+  /* Force mobile shell layout */
+  .app-shell:not(.mobile) {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto 1fr auto !important;
+    grid-template-areas:
+      "topbar"
+      "main"
+      "bottomnav" !important;
+  }
+  /* Hide desktop sidebar always on phones */
+  .app-shell:not(.mobile) .sidebar { display: none !important; }
+  /* Show bottom nav always on phones */
+  .app-shell:not(.mobile) .bottom-nav { display: flex !important; }
+  /* Mobile main scroll padding */
+  .app-shell:not(.mobile) .main-scroll {
+    padding: 16px !important;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 76px) !important;
+  }
+}
