@@ -3,9 +3,15 @@ import webpush from "web-push";
 import { storage } from "./storage";
 
 // VAPID keys (generated once — do not rotate, it invalidates all subscriptions)
+// VAPID_PUBLIC is safe to expose (it's the browser-facing key)
 const VAPID_PUBLIC  = process.env.VAPID_PUBLIC  || "BGGgQC-2KsmdMm1lqPk1iLZnkXmsxZyNN5e4GRyK88_fiacyZGPmHBMRzNIFRkTsipUGVIFbJmrGt8KG5ABfVZY";
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE || "yriMWvL_Z_nj9ThY0qIB5yHl4XYFU2MwIJwnOLn_WwY";
+// VAPID_PRIVATE must come from environment — never hardcode
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE || "";
 const VAPID_EMAIL   = "mailto:whesp24@gmail.com";
+
+if (!VAPID_PRIVATE) {
+  console.warn("[push] VAPID_PRIVATE env var not set — push notifications disabled");
+}
 
 webpush.setVapidDetails(VAPID_EMAIL, VAPID_PUBLIC, VAPID_PRIVATE);
 
