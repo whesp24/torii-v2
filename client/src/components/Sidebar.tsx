@@ -4,11 +4,54 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
 const NAV = [
-  { href: "/",          label: "Overview",     icon: "▣" },
-  { href: "/portfolio", label: "Portfolio",    icon: "◈" },
-  { href: "/market",    label: "Japan",        icon: "⛩" },
-  { href: "/news",      label: "News",         icon: "◉" },
+  { href: "/",          label: "Markets",   icon: "markets"   },
+  { href: "/portfolio", label: "Portfolio", icon: "portfolio" },
+  { href: "/market",   label: "Japan",     icon: "japan"    },
+  { href: "/news",      label: "News",      icon: "news"     },
+  { href: "/voices",   label: "Voices",    icon: "voices"   },
 ];
+
+function NavIcon({ id, active }: { id: string; active: boolean }) {
+  const color = active ? "#BC0024" : "hsl(var(--fg-dim))";
+  const s = { width: 22, height: 22 };
+  if (id === "markets") return (
+    <svg {...s} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  );
+  if (id === "portfolio") return (
+    <svg {...s} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+      <line x1="12" y1="12" x2="12" y2="16" />
+      <line x1="10" y1="14" x2="14" y2="14" />
+    </svg>
+  );
+  if (id === "japan") return (
+    <svg {...s} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18" />
+      <path d="M5 6V4h14v2" />
+      <path d="M8 6v12" />
+      <path d="M16 6v12" />
+      <path d="M3 18h18" />
+    </svg>
+  );
+  if (id === "news") return (
+    <svg {...s} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+      <path d="M18 14h-8" />
+      <path d="M15 18h-5" />
+      <path d="M10 6h8v4h-8V6Z" />
+    </svg>
+  );
+  if (id === "voices") return (
+    <svg {...s} viewBox="0 0 24 24" fill={active ? "#BC0024" : "hsl(var(--fg-dim))"} stroke="none">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  );
+  return null;
+}
 
 // ─── Desktop Sidebar ──────────────────────────────────────────────────────────
 
@@ -25,7 +68,9 @@ export function DesktopSidebar() {
           return (
             <Link key={href} href={href}>
               <div className={`nav-item ${active ? "active" : ""}`}>
-                <span className="nav-icon">{icon}</span>
+                <span className="nav-icon" style={{ display: "flex", alignItems: "center" }}>
+                  <NavIcon id={icon} active={active} />
+                </span>
                 <span>{label}</span>
               </div>
             </Link>
@@ -69,9 +114,34 @@ export function MobileBottomNav() {
         const active = loc === href || (href !== "/" && loc.startsWith(href));
         return (
           <Link key={href} href={href}>
-            <div className={`bottom-nav-item ${active ? "active" : ""}`}>
-              <span className="bottom-nav-icon">{icon}</span>
-              <span className="bottom-nav-label">{label}</span>
+            <div className="bottom-nav-item">
+              {/* Active pill background behind icon */}
+              <div style={{
+                width: 44, height: 30,
+                borderRadius: 999,
+                background: active ? "hsl(var(--surface))" : "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                marginBottom: 2,
+                transition: "background 0.2s",
+              }}>
+                <NavIcon id={icon} active={active} />
+              </div>
+              <span style={{
+                fontSize: 10,
+                fontWeight: active ? 700 : 500,
+                fontFamily: "var(--font-mono)",
+                letterSpacing: "0.02em",
+                color: active ? "#BC0024" : "hsl(var(--fg-dim))",
+                transition: "color 0.2s",
+              }}>{label}</span>
+              {/* Active dot */}
+              {active && (
+                <div style={{
+                  width: 4, height: 4, borderRadius: "50%",
+                  background: "#BC0024",
+                  marginTop: 2,
+                }} />
+              )}
             </div>
           </Link>
         );

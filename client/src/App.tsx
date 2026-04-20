@@ -12,6 +12,7 @@ import Portfolio from "@/pages/Portfolio";
 import JapanMarket from "@/pages/JapanMarket";
 import NewsFeed from "@/pages/NewsFeed";
 import StockDetail from "@/pages/StockDetail";
+import XVoices from "@/pages/XVoices";
 import { createContext, useContext, useEffect, useState } from "react";
 
 // ─── Theme context ─────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ function AppShell() {
             <Route path="/portfolio" component={Portfolio} />
             <Route path="/market" component={JapanMarket} />
             <Route path="/news" component={NewsFeed} />
+            <Route path="/voices" component={XVoices} />
             <Route path="/stock/:symbol" component={StockDetail} />
             <Route component={NotFound} />
           </Switch>

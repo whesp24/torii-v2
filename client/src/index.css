@@ -822,31 +822,11 @@ input, textarea { font-family: inherit; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  padding: 10px 4px;
+  padding: 8px 2px 6px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.15s;
-}
-
-.bottom-nav-icon {
-  font-size: 20px;
-  color: hsl(var(--fg-dim));
-  line-height: 1;
-  transition: color 0.15s;
-}
-.bottom-nav-label {
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  letter-spacing: 0.04em;
-  color: hsl(var(--fg-dim));
-  transition: color 0.15s;
-}
-
-.bottom-nav-item.active .bottom-nav-icon,
-.bottom-nav-item.active .bottom-nav-label {
-  color: var(--red-hex);
+  text-decoration: none;
+  gap: 0;
 }
 
 /* ─────────────────────────────────────────────
