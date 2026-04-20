@@ -1,16 +1,15 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { holdings, briefings, settings } from "@shared/schema";
+import { holdings, briefings, settings, pushSubscriptions } from "@shared/schema";
 import type { Holding, InsertHolding, Briefing } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import path from "path";
 
-// Use DATA_DIR env var (set in Railway/cloud) or fall back to process.cwd() locally
 const DATA_DIR = process.env.DATA_DIR || process.cwd();
-const DB_PATH = path.join(DATA_DIR, "data.db");
+const DB_PATH  = path.join(DATA_DIR, "data.db");
 
 const sqlite = new Database(DB_PATH);
-const db = drizzle(sqlite);
+const db     = drizzle(sqlite);
 
 // Create tables
 sqlite.exec(`
@@ -31,6 +30,11 @@ sqlite.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    endpoint TEXT PRIMARY KEY,
+    subscription TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
 `);
 
 // Seed default holdings if empty
@@ -49,49 +53,51 @@ if (existing.length === 0) {
     { ticker: "AMD",   shares: 1.09, costBasis: null, displayName: "AMD" },
     { ticker: "GOOGL", shares: 1,    costBasis: null, displayName: "Alphabet" },
   ];
-  for (const h of defaults) {
-    db.insert(holdings).values(h).run();
-  }
+  for (const h of defaults) db.insert(holdings).values(h).run();
 }
 
-export interface IStorage {
-  // Holdings
-  getHoldings(): Holding[];
-  addHolding(h: InsertHolding): Holding;
-  updateHolding(id: number, data: Partial<InsertHolding>): Holding | undefined;
-  deleteHolding(id: number): void;
-  // Briefings
-  getTodayBriefing(): Briefing | undefined;
-  saveBriefing(date: string, content: string): Briefing;
-  // Settings
-  getSetting(key: string): string | undefined;
-  setSetting(key: string, value: string): void;
-}
-
-export const storage: IStorage = {
-  getHoldings() {
+export const storage = {
+  // ── Holdings ────────────────────────────────────────────────────────────────
+  getHoldings(): Holding[] {
     return db.select().from(holdings).all();
   },
-  addHolding(h) {
+  addHolding(h: InsertHolding): Holding {
     return db.insert(holdings).values(h).returning().get();
   },
-  updateHolding(id, data) {
+  updateHolding(id: number, data: Partial<InsertHolding>): Holding | undefined {
     return db.update(holdings).set(data).where(eq(holdings.id, id)).returning().get();
   },
-  deleteHolding(id) {
+  deleteHolding(id: number): void {
     db.delete(holdings).where(eq(holdings.id, id)).run();
   },
-  getTodayBriefing() {
+
+  // ── Briefings ────────────────────────────────────────────────────────────────
+  getTodayBriefing(): Briefing | undefined {
     const today = new Date().toISOString().slice(0, 10);
     return db.select().from(briefings).all().find(b => b.date === today);
   },
-  saveBriefing(date, content) {
+  saveBriefing(date: string, content: string): Briefing {
     return db.insert(briefings).values({ date, content, generatedAt: Date.now() }).returning().get();
   },
-  getSetting(key) {
+
+  // ── Settings ─────────────────────────────────────────────────────────────────
+  getSetting(key: string): string | undefined {
     return db.select().from(settings).all().find(s => s.key === key)?.value;
   },
-  setSetting(key, value) {
-    sqlite.exec(`INSERT OR REPLACE INTO settings (key, value) VALUES ('${key.replace(/'/g,"''")}', '${value.replace(/'/g,"''")}');`);
+  setSetting(key: string, value: string): void {
+    sqlite.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run(key, value);
+  },
+
+  // ── Push subscriptions ───────────────────────────────────────────────────────
+  savePushSubscription(endpoint: string, sub: object): void {
+    sqlite.prepare(
+      "INSERT OR REPLACE INTO push_subscriptions (endpoint, subscription, created_at) VALUES (?, ?, ?)"
+    ).run(endpoint, JSON.stringify(sub), Date.now());
+  },
+  getPushSubscriptions(): Array<{ endpoint: string; subscription: string }> {
+    return db.select().from(pushSubscriptions).all();
+  },
+  removePushSubscription(endpoint: string): void {
+    db.delete(pushSubscriptions).where(eq(pushSubscriptions.endpoint, endpoint)).run();
   },
 };

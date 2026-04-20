@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { startAlertMonitor } from "./alerts";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -94,5 +95,6 @@ app.use((req, res, next) => {
   const host = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
   httpServer.listen(port, host, () => {
     log(`serving on port ${port}`);
+    if (process.env.NODE_ENV === 'production') startAlertMonitor();
   });
 })();

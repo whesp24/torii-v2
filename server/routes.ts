@@ -272,5 +272,41 @@ export async function registerRoutes(httpServer: ReturnType<typeof createServer>
     }
   });
 
+
+  // ── Push Notifications ────────────────────────────────────────────────────
+
+  app.get("/api/push/vapid-key", (_req, res) => {
+    const { VAPID_PUBLIC } = require("./push");
+    res.json({ publicKey: VAPID_PUBLIC });
+  });
+
+  app.post("/api/push/subscribe", (req, res) => {
+    const { endpoint, subscription } = req.body;
+    if (!endpoint || !subscription) return res.status(400).json({ error: "Missing fields" });
+    storage.savePushSubscription(endpoint, subscription);
+    res.json({ ok: true });
+  });
+
+  app.delete("/api/push/subscribe", (req, res) => {
+    const { endpoint } = req.body;
+    if (endpoint) storage.removePushSubscription(endpoint);
+    res.json({ ok: true });
+  });
+
+  // Manual test ping
+  app.post("/api/push/test", async (_req, res) => {
+    const { sendPushToAll } = await import("./push");
+    await sendPushToAll({
+      title: "🔔 Torii Alerts Active",
+      body:  "You'll receive market, portfolio, and news alerts here.",
+      url:   "/",
+      tag:   "test-ping",
+    });
+    res.json({ ok: true });
+  });
+
   return httpServer;
 }
+
+// ── Push notification routes (added for PWA alerts) ──────────────────────────
+// These are appended here; the main registerRoutes function above handles all other routes.

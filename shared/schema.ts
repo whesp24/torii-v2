@@ -30,3 +30,12 @@ export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
 });
+
+// Web Push subscriptions
+export const pushSubscriptions = sqliteTable("push_subscriptions", {
+  endpoint: text("endpoint").primaryKey(),
+  subscription: text("subscription").notNull(), // JSON string of PushSubscription
+  createdAt: integer("created_at").notNull(),
+});
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
