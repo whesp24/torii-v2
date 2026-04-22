@@ -189,7 +189,7 @@ function AppShell() {
             <Route path="/market" component={JapanMarket} />
             <Route path="/news" component={NewsFeed} />
             <Route path="/voices" component={XVoices} />
-            <Route path="/network" component={Networking} />
+            <Route path="/network"  component={Network}  />
             <Route path="/projects" component={Projects} />
             <Route path="/stock/:symbol" component={StockDetail} />
             <Route component={NotFound} />
