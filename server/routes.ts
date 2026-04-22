@@ -10,6 +10,7 @@ import { computeOutlook } from "./outlook";
 import { generateBriefing } from "./briefing";
 import { insertHoldingSchema } from "@shared/schema";
 import { getSentimentBatch } from "./sentiment";
+import { registerTaskRoutes } from "./task-routes";
 
 // ── Symbol lists ─────────────────────────────────────────────────────────────
 
