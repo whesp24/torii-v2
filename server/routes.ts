@@ -1,4 +1,6 @@
-import { registerTaskRoutes } from "./task-routes";
+import { registerTaskRoutes }     from "./task-routes";
+import { registerVoicesRoutes }   from "./voices-routes";
+import { registerAutoTasksRoute } from "./auto-tasks-route";
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
