@@ -4,6 +4,17 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import cors from "cors";
+
+// BEFORE your app.use(express.json()) and before any routes:
+app.use(cors({
+  origin: [
+    "https://torii-jp.netlify.app",
+    "http://localhost:5000",
+    "http://localhost:3000",
+  ],
+  credentials: false,
+}));
 
 const app = express();
 const httpServer = createServer(app);
