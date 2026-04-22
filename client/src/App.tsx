@@ -13,7 +13,6 @@ import JapanMarket from "@/pages/JapanMarket";
 import NewsFeed from "@/pages/NewsFeed";
 import StockDetail from "@/pages/StockDetail";
 import XVoices from "@/pages/XVoices";
-import Networking from "@/pages/Networking";
 import Network  from "@/pages/Network";
 import Projects from "@/pages/Projects";
 import { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
