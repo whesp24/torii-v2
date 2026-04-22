@@ -1,6 +1,6 @@
-// ─── NETWORKING PAGE ─────────────────────────────────────────────────────────
+// ─── NETWORKING PAGE
 import { useState, useEffect } from "react";
-export default function Network() { return <NetworkingPage />; }
+
 const PIPELINE_STAGES = [
   { id: 'not-contacted', label: 'Not Contacted', color: 'var(--fg3)'      },
   { id: 'reached-out',   label: 'Reached Out',   color: 'var(--amber)'    },
@@ -48,8 +48,8 @@ function saveContacts(c) {
 
 function ContactCard({ contact, onStageChange, onDelete, onNote }) {
   const stage = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
-  const [showNote, setShowNote] = React.useState(false);
-  const [noteVal, setNoteVal] = React.useState(contact.note || '');
+  const [showNote, setShowNote] = useState(false);
+  const [noteVal, setNoteVal] = useState(contact.note || '');
   const initials = contact.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -151,7 +151,7 @@ function ContactCard({ contact, onStageChange, onDelete, onNote }) {
 // ─── Add Contact Modal ────────────────────────────────────────────────────────
 
 function AddContactModal({ onAdd, onClose }) {
-  const [form, setForm] = React.useState({
+  const [form, setForm] = useState({
     name: '', title: '', company: '', location: '', linkedInUrl: '', tags: '', note: '',
   });
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
@@ -222,19 +222,19 @@ function AddContactModal({ onAdd, onClose }) {
 // ─── Main Networking Page ─────────────────────────────────────────────────────
 
 function NetworkingPage() {
-  const [contacts, setContacts] = React.useState(loadContacts);
-  const [view, setView] = React.useState('pipeline'); // 'pipeline' | 'list'
-  const [showAdd, setShowAdd] = React.useState(false);
-  const [filterStage, setFilterStage] = React.useState('all');
+  const [contacts, setContacts] = useState(loadContacts);
+  const [view, setView] = useState('pipeline'); // 'pipeline' | 'list'
+  const [showAdd, setShowAdd] = useState(false);
+  const [filterStage, setFilterStage] = useState('all');
 
   // LinkedIn filter state
-  const [liFilters, setLiFilters] = React.useState({
+  const [liFilters, setLiFilters] = useState({
     keywords: '', title: '', company: '',
     location: 'Any',
     industries: [],
   });
 
-  React.useEffect(() => { saveContacts(contacts); }, [contacts]);
+  useEffect(() => { saveContacts(contacts); }, [contacts]);
 
   function addContact(c) { setContacts(p => [...p, c]); }
   function deleteContact(id) { setContacts(p => p.filter(c => c.id !== id)); }
@@ -426,4 +426,7 @@ function NetworkingPage() {
   );
 }
 
-Object.assign(window, { NetworkingPage });
+
+
+
+export default function Network() { return <NetworkingPage />; }
