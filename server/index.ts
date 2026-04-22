@@ -1,4 +1,6 @@
 import "dotenv/config";
+npm install cors
+npm install -D @types/cors
 import { startAlertMonitor } from "./alerts";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
