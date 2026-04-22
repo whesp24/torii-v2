@@ -1,6 +1,6 @@
-// ─── PROJECTS PAGE ───────────────────────────────────────────────────────────
+// ─── PROJECTS PAGE
 import { useState, useEffect } from "react";
-export default function Projects() { return <ProjectsPage />; }
+
 const PROJECT_STATUSES = [
   { id: 'active',    label: 'Active',    color: 'var(--green)'  },
   { id: 'paused',    label: 'Paused',    color: 'var(--amber)'  },
@@ -56,7 +56,7 @@ const DEFAULT_PROJECTS = [
 // ─── Milestone Checklist ──────────────────────────────────────────────────────
 
 function MilestoneList({ milestones, onToggle, onAdd, onDelete }) {
-  const [input, setInput] = React.useState('');
+  const [input, setInput] = useState('');
   const done = milestones.filter(m => m.done).length;
   const pct  = milestones.length ? Math.round((done / milestones.length) * 100) : 0;
 
@@ -124,9 +124,9 @@ function MilestoneList({ milestones, onToggle, onAdd, onDelete }) {
 // ─── Project Card ─────────────────────────────────────────────────────────────
 
 function ProjectCard({ project, contacts, onUpdate, onDelete }) {
-  const [expanded, setExpanded] = React.useState(true);
-  const [editingNote, setEditingNote] = React.useState(false);
-  const [noteVal, setNoteVal]   = React.useState(project.notes || '');
+  const [expanded, setExpanded] = useState(true);
+  const [editingNote, setEditingNote] = useState(false);
+  const [noteVal, setNoteVal]   = useState(project.notes || '');
   const status = PROJECT_STATUSES.find(s => s.id === project.status) || PROJECT_STATUSES[0];
   const done = project.milestones.filter(m => m.done).length;
   const pct  = project.milestones.length ? Math.round((done / project.milestones.length) * 100) : 0;
@@ -276,7 +276,7 @@ function ProjectCard({ project, contacts, onUpdate, onDelete }) {
 }
 
 function LinkContactDropdown({ contacts, linked, onLink }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const available = contacts.filter(c => !linked.includes(c.id));
   if (available.length === 0) return null;
   return (
@@ -308,7 +308,7 @@ function LinkContactDropdown({ contacts, linked, onLink }) {
 // ─── New Project Modal ────────────────────────────────────────────────────────
 
 function NewProjectModal({ onAdd, onClose }) {
-  const [form, setForm] = React.useState({ name: '', description: '', category: 'Research', status: 'active' });
+  const [form, setForm] = useState({ name: '', description: '', category: 'Research', status: 'active' });
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
   function handleSubmit(e) {
@@ -384,16 +384,16 @@ function NewProjectModal({ onAdd, onClose }) {
 // ─── Main Projects Page ───────────────────────────────────────────────────────
 
 function ProjectsPage() {
-  const [projects, setProjects] = React.useState(loadProjects);
-  const [showNew,  setShowNew]  = React.useState(false);
-  const [filterStatus, setFilter] = React.useState('all');
+  const [projects, setProjects] = useState(loadProjects);
+  const [showNew,  setShowNew]  = useState(false);
+  const [filterStatus, setFilter] = useState('all');
 
   // Load contacts to allow linking
-  const [contacts] = React.useState(() => {
+  const [contacts] = useState(() => {
     try { return JSON.parse(localStorage.getItem('torii-contacts') || '[]'); } catch { return []; }
   });
 
-  React.useEffect(() => { saveProjects(projects); }, [projects]);
+  useEffect(() => { saveProjects(projects); }, [projects]);
 
   function addProject(p) { setProjects(prev => [p, ...prev]); }
   function updateProject(p) { setProjects(prev => prev.map(x => x.id === p.id ? p : x)); }
@@ -479,4 +479,7 @@ function ProjectsPage() {
   );
 }
 
-Object.assign(window, { ProjectsPage });
+
+
+
+export default function Projects() { return <ProjectsPage />; }
