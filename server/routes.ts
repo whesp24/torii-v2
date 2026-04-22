@@ -1,3 +1,4 @@
+import { registerTaskRoutes } from "./task-routes";
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
@@ -372,7 +373,7 @@ export async function registerRoutes(httpServer: ReturnType<typeof createServer>
       res.status(500).json({ error: e.message || "Failed to fetch tweets" });
     }
   });
-
+registerTaskRoutes(app);
   return httpServer;
 }
 
