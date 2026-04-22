@@ -322,60 +322,11 @@ export async function registerRoutes(httpServer: ReturnType<typeof createServer>
     res.json({ ok: true });
   });
 
-  // ── X / Twitter Voices Feed ──────────────────────────────────────────────
+  // ── Voices (Nitter) + Auto-Tasks + Tasks ─────────────────────────────────
+  registerTaskRoutes(app);
+  registerVoicesRoutes(app);
+  registerAutoTasksRoute(app);
 
-  app.get("/api/voices", async (_req, res) => {
-    const bearer = process.env.X_BEARER_TOKEN;
-    if (!bearer) return res.status(503).json({ error: "X_BEARER_TOKEN not configured" });
-
-    const HANDLES = ["KevinLMak", "ContrarianCurse", "dsundheim", "jeff_weinstein", "patrick_oshag", "HannoLustig"];
-
-    try {
-      const cached = await cachedAsync("x-voices", 5 * 60 * 1000, async () => {
-        // First resolve handles → user IDs
-        const joinedHandles = HANDLES.join(",");
-        const userRes = await fetch(
-          `https://api.twitter.com/2/users/by?usernames=${joinedHandles}&user.fields=name,username,profile_image_url`,
-          { headers: { Authorization: `Bearer ${bearer}` } }
-        );
-        const userData = await userRes.json() as any;
-        if (!userData.data) throw new Error(userData.detail || "Failed to fetch users");
-
-        const users: Record<string, any> = {};
-        for (const u of userData.data) users[u.id] = u;
-
-        // Fetch recent tweets for each user in parallel
-        const tweetArrays = await Promise.all(
-          userData.data.map(async (u: any) => {
-            const r = await fetch(
-              `https://api.twitter.com/2/users/${u.id}/tweets?max_results=10&tweet.fields=created_at,text,public_metrics&exclude=retweets,replies`,
-              { headers: { Authorization: `Bearer ${bearer}` } }
-            );
-            const d = await r.json() as any;
-            return (d.data || []).map((t: any) => ({
-              id: t.id,
-              text: t.text,
-              createdAt: t.created_at,
-              metrics: t.public_metrics,
-              author: { id: u.id, name: u.name, handle: u.username, avatar: u.profile_image_url },
-              url: `https://x.com/${u.username}/status/${t.id}`,
-            }));
-          })
-        );
-
-        // Merge and sort chronologically (newest first)
-        const all = (tweetArrays as any[][]).flat();
-        all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        return all;
-      });
-
-      res.json(cached);
-    } catch (e: any) {
-      console.error("[x-voices]", e);
-      res.status(500).json({ error: e.message || "Failed to fetch tweets" });
-    }
-  });
-registerTaskRoutes(app);
   return httpServer;
 }
 
