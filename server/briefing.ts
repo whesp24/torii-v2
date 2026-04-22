@@ -7,15 +7,17 @@ function curlJson(url: string): any {
   } catch { return null; }
 }
 
-// Generate briefing using Perplexity API (if key available) or compose from data
+// Generate briefing using Claude, Perplexity, or OpenAI API (first available wins)
 export async function generateBriefing(marketData: any, portfolioData: any, newsHeadlines: string[]): Promise<string> {
-  const apiKey = process.env.PERPLEXITY_API_KEY || process.env.OPENAI_API_KEY;
+  const claudeKey     = process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY;
+  const perplexityKey = process.env.PERPLEXITY_API_KEY;
+  const openaiKey     = process.env.OPENAI_API_KEY;
 
   // Build context string
   const nikkei = marketData.japan?.find((q: any) => q.symbol === "^N225");
   const usdjpy = marketData.japan?.find((q: any) => q.symbol === "USDJPY=X");
-  const vix = marketData.macro?.find((q: any) => q.symbol === "^VIX");
-  const spx = marketData.macro?.find((q: any) => q.symbol === "^GSPC");
+  const vix    = marketData.macro?.find((q: any) => q.symbol === "^VIX");
+  const spx    = marketData.macro?.find((q: any) => q.symbol === "^GSPC");
 
   const portfolioLines = (portfolioData || []).map((h: any) =>
     `${h.ticker}: $${h.price?.toFixed(2)} (${h.changePct >= 0 ? "+" : ""}${h.changePct?.toFixed(2)}%)`
@@ -34,9 +36,30 @@ export async function generateBriefing(marketData: any, portfolioData: any, news
 
 Keep the briefing under 400 words. Be direct, specific, and actionable. Today's date: ${new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.`;
 
+  // ── Try Claude first (preferred) ────────────────────────────────────────────
+  if (claudeKey) {
+    try {
+      const body = JSON.stringify({
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 800,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const cmd = `curl -s --max-time 30 -X POST "https://api.anthropic.com/v1/messages" -H "x-api-key: ${claudeKey}" -H "anthropic-version: 2023-06-01" -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`;
+      const raw = execSync(cmd, { encoding: "utf-8" });
+      const resp = JSON.parse(raw);
+      const content = resp?.content?.[0]?.text;
+      if (content) return content;
+      console.error("Claude briefing no content:", resp);
+    } catch (e) {
+      console.error("Claude briefing API failed:", e);
+    }
+  }
+
+  // ── Fallback: Perplexity or OpenAI ──────────────────────────────────────────
+  const apiKey = perplexityKey || openaiKey;
   if (apiKey) {
     try {
-      const isPerplexity = !!process.env.PERPLEXITY_API_KEY;
+      const isPerplexity = !!perplexityKey;
       const endpoint = isPerplexity
         ? "https://api.perplexity.ai/chat/completions"
         : "https://api.openai.com/v1/chat/completions";
@@ -59,7 +82,7 @@ Keep the briefing under 400 words. Be direct, specific, and actionable. Today's 
     }
   }
 
-  // Fallback: compose briefing from data without AI
+  // ── Fallback: compose briefing from data without AI ─────────────────────────
   const nikkeiStr = nikkei
     ? `Nikkei 225 is at **${nikkei.regularMarketPrice?.toLocaleString()}**, ${nikkei.regularMarketChangePercent >= 0 ? "up" : "down"} **${Math.abs(nikkei.regularMarketChangePercent).toFixed(2)}%** today.`
     : "Nikkei 225 data unavailable.";
@@ -98,5 +121,5 @@ ${newsHeadlines.slice(0, 5).map(h => `- ${h}`).join("\n")}
 ### What to Watch
 Monitor upcoming BOJ policy signals and USD/JPY movement. Any shift above 160 JPY warrants attention for Japan-exposed positions like MUFG.
 
-*Add an OpenAI or Perplexity API key in Settings for a richer AI-generated briefing.*`;
+*Add an ANTHROPIC_API_KEY (Claude), PERPLEXITY_API_KEY, or OPENAI_API_KEY for AI-generated briefings.*`;
 }
